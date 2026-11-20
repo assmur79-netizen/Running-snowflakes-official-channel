@@ -1,0 +1,866 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GameHub</title>
+<style>
+:root{--bg:#0b1630;--panel:#13213f;--panel2:#1a2c52;--line:#2c4170;--text:#eef4ff;--muted:#9db0d6;--accent:#d6283f;--accent2:#1f9d55;--ok:#34d399;--bad:#f43f5e;--gold:#fbbf24}
+*{box-sizing:border-box}
+body{margin:0;color:var(--text);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh;background:radial-gradient(900px 500px at 15% -10%,#1d3b78 0,transparent 60%),radial-gradient(700px 400px at 100% 0,#3a1530 0,transparent 55%),var(--bg);background-attachment:fixed}
+/* гирлянда */
+body::before{content:"";position:fixed;top:0;left:0;right:0;height:10px;z-index:40;background:repeating-linear-gradient(90deg,#ef4444 0 24px,#fbbf24 24px 48px,#22c55e 48px 72px,#38bdf8 72px 96px);opacity:.9;animation:blink 1.6s steps(2) infinite;box-shadow:0 0 18px #fbbf2466}
+@keyframes blink{50%{filter:brightness(.55)}}
+/* снег */
+.snow{position:fixed;top:-20px;color:#fff;opacity:.8;pointer-events:none;z-index:1;animation:fall linear infinite;user-select:none}
+@keyframes fall{to{transform:translateY(110vh) translateX(40px) rotate(360deg)}}
+#app{max-width:880px;margin:0 auto;padding:26px 16px 16px;position:relative;z-index:2}
+h1,h2,h3{margin:0 0 12px}
+h2{font-size:20px}h3{font-size:16px;color:var(--muted);font-weight:600}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px;box-shadow:0 6px 24px #0006}
+.header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.logo{font-weight:800;font-size:22px;background:linear-gradient(90deg,#ff5a6e,#fbbf24,#34d399);-webkit-background-clip:text;background-clip:text;color:transparent}
+.coins{background:var(--panel2);border:1px solid var(--gold);border-radius:999px;padding:6px 14px;font-weight:700;color:var(--gold)}
+.nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.nav button,.tabs button{background:var(--panel);border:1px solid var(--line);color:var(--muted);padding:9px 14px;border-radius:10px;cursor:pointer;font:inherit}
+.nav button.on,.tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+input,textarea,select{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 12px;font:inherit;margin-bottom:10px}
+input:focus,textarea:focus{outline:2px solid var(--gold);border-color:transparent}
+textarea{min-height:90px;resize:vertical}
+label{display:block;font-size:13px;color:var(--muted);margin:0 0 4px}
+.btn{background:linear-gradient(90deg,var(--accent),#ef4444);border:0;color:#fff;font:inherit;font-weight:700;padding:11px 18px;border-radius:10px;cursor:pointer}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.small{padding:6px 10px;font-size:13px;font-weight:600}
+.btn.ghost{background:var(--panel2);border:1px solid var(--line);color:var(--text)}
+.btn.danger{background:var(--bad)}
+.btn.ok{background:var(--ok);color:#05261b}
+.btn.green{background:linear-gradient(90deg,#15803d,#22c55e)}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.muted{color:var(--muted);font-size:14px}
+.keybox{background:#0a1228;border:1px dashed var(--gold);color:var(--gold);padding:14px;border-radius:12px;font:700 20px ui-monospace,monospace;text-align:center;word-break:break-all;margin:10px 0}
+.post{border-top:1px solid var(--line);padding:12px 0}.post:first-of-type{border-top:0}
+.post b{display:block}.post .d{font-size:12px;color:var(--muted)}.post p{margin:6px 0 0;white-space:pre-wrap}
+.wheelwrap{position:relative;width:min(100%,340px);margin:6px auto 16px;aspect-ratio:1}
+.wheelwrap canvas{width:100%;height:100%;border-radius:50%;box-shadow:0 0 40px #d6283f66;transition:transform 5s cubic-bezier(.12,.7,.1,1)}
+.pointer{position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-top:28px solid var(--gold);filter:drop-shadow(0 2px 3px #000a);z-index:2}
+.center{text-align:center}
+.table{width:100%;border-collapse:collapse;font-size:14px}
+.table th,.table td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+.table th{color:var(--muted);font-weight:600}
+.scroll{overflow-x:auto}
+.tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700}
+.tag.ok{background:#34d39922;color:var(--ok)}.tag.bad{background:#f43f5e22;color:var(--bad)}.tag.off{background:#9db0d622;color:var(--muted)}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:90;pointer-events:none}
+#toast div{background:var(--panel2);border:1px solid var(--line);padding:10px 16px;border-radius:12px;box-shadow:0 8px 30px #000a;max-width:90vw}
+#toast .err{border-color:var(--bad)}#toast .good{border-color:var(--ok)}
+.banned{text-align:center;padding:40px 18px}
+.banner{background:#fbbf2422;border:1px solid var(--gold);color:var(--gold);padding:10px 14px;border-radius:12px;margin-bottom:14px;font-size:14px}
+/* кейсы */
+.cases{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+.case{background:linear-gradient(160deg,#1c3260,#13213f);border:1px solid var(--line);border-radius:16px;padding:16px;text-align:center;position:relative;overflow:hidden}
+.case .em{font-size:56px;line-height:1.1;filter:drop-shadow(0 4px 8px #0008)}
+.case h3{color:var(--text);margin:6px 0 2px;font-size:18px}
+.case.closed{opacity:.55;filter:grayscale(.6)}
+.case .ribbon{position:absolute;top:10px;right:-30px;background:var(--bad);color:#fff;font-size:11px;font-weight:700;padding:3px 34px;transform:rotate(35deg)}
+.modal{position:fixed;inset:0;background:#030814e6;z-index:60;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal .box{background:var(--panel);border:1px solid var(--gold);border-radius:18px;padding:20px;width:min(100%,640px);text-align:center}
+.strip-wrap{position:relative;overflow:hidden;border-radius:12px;background:#0a1228;border:1px solid var(--line);padding:10px 0;margin:14px 0}
+.strip-wrap::after{content:"";position:absolute;top:0;bottom:0;left:50%;width:3px;background:var(--gold);box-shadow:0 0 12px var(--gold);z-index:2}
+.strip{display:flex;gap:8px;will-change:transform}
+.tile{flex:0 0 110px;height:96px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;font-size:20px;background:var(--panel2);border:2px solid var(--line)}
+.tile small{font-size:11px;color:var(--muted);font-weight:600}
+.tile.r1{border-color:#64748b}.tile.r2{border-color:#22c55e}.tile.r3{border-color:#38bdf8}.tile.r4{border-color:#d946ef}.tile.r5{border-color:var(--gold);background:#3b2f0a}
+.result{font-size:24px;font-weight:800;color:var(--gold);min-height:34px}
+/* снежки (С) */
+.scoin{display:inline-flex;align-items:center;justify-content:center;width:1.3em;height:1.3em;border-radius:50%;background:radial-gradient(circle at 30% 30%,#fff2a8,#fbbf24 55%,#b45309);color:#7c3a00;font-weight:900;font-size:.85em;box-shadow:inset 0 0 0 2px #fde68a,0 1px 3px #0008;vertical-align:middle;line-height:1}
+.balances{display:flex;gap:8px;flex-wrap:wrap}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:13px}
+
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast"></div>
+<script>
+'use strict';
+// Локальный «сервер» внутри браузера: вся логика сайта работает на этом устройстве, данные в localStorage.
+(function () {
+  const KEY = 'gamehub_db_v1';
+  const TZ = 5, DAY = 864e5;
+  const DEV_DEFAULT = { salt: '235f226934caf036ee1409f03a7f01da', hash: '38bd51c0170ea385da69b190d4a81901987c00eb7b8a38a68b5897938785de91' };
+
+  // ---------- sha256 (синхронный, работает без https) ----------
+  const K = [], H0 = [];
+  (function () {
+    const primes = []; for (let n = 2; primes.length < 64; n++) { if (primes.every((p) => n % p)) primes.push(n); }
+    primes.forEach((p, i) => { K[i] = Math.floor((Math.cbrt(p) % 1) * 4294967296) | 0; if (i < 8) H0[i] = Math.floor((Math.sqrt(p) % 1) * 4294967296) | 0; });
+  })();
+  function sha256(s) {
+    const bytes = new TextEncoder().encode(s), l = bytes.length, total = ((l + 9 + 63) >> 6) << 6;
+    const buf = new Uint8Array(total); buf.set(bytes); buf[l] = 0x80;
+    const dv = new DataView(buf.buffer), bl = l * 8;
+    dv.setUint32(total - 4, bl >>> 0); dv.setUint32(total - 8, Math.floor(bl / 4294967296));
+    const h = H0.slice(), w = new Int32Array(64);
+    for (let o = 0; o < total; o += 64) {
+      for (let i = 0; i < 16; i++) w[i] = dv.getUint32(o + i * 4);
+      for (let i = 16; i < 64; i++) {
+        const a = w[i - 15], b = w[i - 2];
+        const s0 = ((a >>> 7) | (a << 25)) ^ ((a >>> 18) | (a << 14)) ^ (a >>> 3);
+        const s1 = ((b >>> 17) | (b << 15)) ^ ((b >>> 19) | (b << 13)) ^ (b >>> 10);
+        w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;
+      }
+      let [a, b, c, d, e, f, g, hh] = h;
+      for (let i = 0; i < 64; i++) {
+        const S1 = ((e >>> 6) | (e << 26)) ^ ((e >>> 11) | (e << 21)) ^ ((e >>> 25) | (e << 7));
+        const t1 = (hh + S1 + ((e & f) ^ (~e & g)) + K[i] + w[i]) | 0;
+        const S0 = ((a >>> 2) | (a << 30)) ^ ((a >>> 13) | (a << 19)) ^ ((a >>> 22) | (a << 10));
+        const t2 = (S0 + ((a & b) ^ (a & c) ^ (b & c))) | 0;
+        hh = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+      }
+      h[0] = (h[0] + a) | 0; h[1] = (h[1] + b) | 0; h[2] = (h[2] + c) | 0; h[3] = (h[3] + d) | 0;
+      h[4] = (h[4] + e) | 0; h[5] = (h[5] + f) | 0; h[6] = (h[6] + g) | 0; h[7] = (h[7] + hh) | 0;
+    }
+    return h.map((x) => (x >>> 0).toString(16).padStart(8, '0')).join('');
+  }
+  function hashPw(pw, salt) { let x = sha256(salt + ':' + pw); for (let i = 0; i < 10000; i++) x = sha256(x + ':' + salt + ':' + pw); return x; }
+  window.__hashPw = hashPw;
+
+  function rbytes(n) { const a = new Uint8Array(n); crypto.getRandomValues(a); return a; }
+  function rint(n) { const lim = Math.floor(4294967296 / n) * n; let x; do { x = new Uint32Array(rbytes(4).buffer)[0]; } while (x >= lim); return x % n; }
+  function rnd(n) { return btoa(String.fromCharCode(...rbytes(n))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  function rhex(n) { return Array.from(rbytes(n), (b) => b.toString(16).padStart(2, '0')).join(''); }
+
+  // ---------- хранилище ----------
+  const _case = (id, name, emoji, price, pr) => ({ id, name, emoji, price, open: true, prizes: pr.map(([coins, w]) => ({ coins, w })) });
+  const defaults = () => ({
+    users: {}, promos: {}, posts: [], cur: null, devUntil: 0, devFail: [], dev: null,
+    cases: {
+      snow: _case('snow', 'Снежок', '❄️', 50, [[10, 26], [25, 28], [40, 20], [60, 14], [100, 8], [250, 4]]),
+      gift: _case('gift', 'Подарок', '🎁', 150, [[30, 26], [75, 28], [120, 20], [180, 14], [300, 8], [750, 4]]),
+      tree: _case('tree', 'Ёлка', '🎄', 400, [[80, 26], [200, 28], [320, 20], [480, 14], [800, 8], [2000, 4]]),
+      santa: _case('santa', 'Дед Мороз', '🎅', 1000, [[200, 26], [500, 28], [800, 20], [1200, 14], [2000, 8], [5000, 4]]),
+    },
+    maintenance: { on: false, message: '' },
+    pass: { open: true, name: 'Новогодний пасс', price: 10, days: 30, dailyCoins: 100, rate: 100 },
+  });
+  let db = defaults();
+  try { const raw = localStorage.getItem(KEY); if (raw) db = Object.assign(defaults(), JSON.parse(raw)); } catch (e) { console.warn('localStorage недоступен, данные не сохранятся', e); }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) { /* без сохранения */ } }
+  const devCfg = () => db.dev || DEV_DEFAULT;
+
+  // ---------- общие ----------
+  const now = () => Date.now();
+  const dayKey = (t) => Math.floor((t + TZ * 36e5) / DAY);
+  const nextDay = (t) => (dayKey(t) + 1) * DAY - TZ * 36e5;
+  class E extends Error { constructor(c, m) { super(m); this.code = c; } }
+  const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+  const num = (v, min, max, def = 0) => { const n = Math.floor(Number(v)); return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : def; };
+  const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,}$/;
+  const devActive = () => db.devUntil > now();
+
+  const WHEEL = [10, 50, 20, 100, 15, 250, 25, 500, 30, 1000].map((coins, i) => ({ coins, w: [20, 10, 16, 8, 16, 4, 12, 2, 10, 1][i] }));
+  function pick(items) { const total = items.reduce((a, b) => a + b.w, 0); let r = rint(total); for (let i = 0; i < items.length; i++) { if (r < items[i].w) return i; r -= items[i].w; } return 0; }
+
+  const SNOW_CHANCE = 300;
+  const SNOW_TIERS = [{ amount: 1, w: 6000 }, { amount: 3, w: 2500 }, { amount: 10, w: 1000 }, { amount: 30, w: 400 }, { amount: 100, w: 100 }];
+  const SNOW_TABLE = SNOW_TIERS.map((t) => ({ amount: t.amount, chance: +((SNOW_CHANCE / 10000) * (t.w / 10000) * 100).toFixed(2) }));
+  const rollSnow = () => (rint(10000) >= SNOW_CHANCE ? 0 : SNOW_TIERS[pick(SNOW_TIERS)].amount);
+
+  const passActive = (u) => !!(u.passUntil && u.passUntil > now());
+  const maxSpins = (u) => (passActive(u) ? 2 : 1);
+  const spinsUsed = (u) => (u.lastSpinDay === dayKey(now()) ? (u.spinsToday || 1) : 0);
+  const caseView = (c) => ({ id: c.id, name: c.name, emoji: c.emoji, price: c.price, open: c.open, prizes: c.prizes.map((p) => p.coins) });
+  const MAINT = 'Технические работы. Скоро всё заработает, загляните позже!';
+
+  function banActive(u) { if (!u.banned) return false; if (u.banned.until && u.banned.until < now()) { u.banned = null; save(); return false; } return true; }
+  function banText(u) {
+    const b = u.banned;
+    return 'Аккаунт заблокирован' + (b.reason ? ': ' + b.reason : '') + (b.until ? ' (до ' + new Date(b.until).toISOString().replace('T', ' ').slice(0, 16) + ' UTC)' : ' (навсегда)');
+  }
+  function userView(u) {
+    const t = now(), can = spinsUsed(u) < maxSpins(u);
+    return {
+      email: u.email, coins: u.coins, snow: u.snow || 0, canSpin: can, nextSpinAt: can ? null : nextDay(t), spinsLeft: maxSpins(u) - spinsUsed(u),
+      passUntil: passActive(u) ? u.passUntil : null, canClaimPass: passActive(u) && u.lastPassDay !== dayKey(t), banned: banActive(u) ? banText(u) : null,
+    };
+  }
+  const sessionUser = () => (db.cur && db.users[db.cur]) || null;
+  function requireUser() { const u = sessionUser(); if (!u) throw new E(401, 'Нужно войти в аккаунт'); if (banActive(u)) throw new E(403, banText(u)); return u; }
+  function requireDev() { if (!devActive()) throw new E(403, 'Нет доступа'); }
+  function devUser(b) { const u = db.users[str(b.email, 254).toLowerCase()]; if (!u) throw new E(404, 'Пользователь не найден'); return u; }
+  function passView(u) {
+    const p = db.pass;
+    return { name: p.name, price: p.price, days: p.days, dailyCoins: p.dailyCoins, open: p.open, rate: p.rate, active: passActive(u), until: passActive(u) ? u.passUntil : null,
+      canClaim: passActive(u) && u.lastPassDay !== dayKey(now()), snow: u.snow || 0, coins: u.coins };
+  }
+
+  // ---------- маршруты ----------
+  const R = {};
+  R['GET /api/me'] = () => { const u = sessionUser(); return { user: u ? userView(u) : null, isDev: devActive(), maintenance: db.maintenance.on ? (db.maintenance.message || MAINT) : null }; };
+  R['GET /api/prizes'] = () => ({ prizes: WHEEL.map((p) => p.coins) });
+  R['GET /api/posts'] = () => ({ posts: db.posts.slice(-30).reverse() });
+  R['GET /api/cases'] = () => ({ cases: Object.values(db.cases).map(caseView), snowTable: SNOW_TABLE, snowChance: SNOW_CHANCE / 100 });
+
+  R['POST /api/register'] = (b) => {
+    const email = str(b.email, 254).toLowerCase();
+    if (!EMAIL_RE.test(email)) throw new E(400, 'Введите корректную почту');
+    if (db.users[email]) throw new E(409, 'Эта почта уже зарегистрирована — зайдите во вкладке «Вход» по своему ключу');
+    const key = rnd(9);
+    db.users[email] = { email, keyHash: sha256(key), coins: 0, snow: 0, createdAt: now(), lastSpinDay: null, spinsToday: 0, banned: null };
+    db.cur = email; save();
+    return { key, user: userView(db.users[email]) };
+  };
+  R['POST /api/login'] = (b) => {
+    const email = str(b.email, 254).toLowerCase(), u = db.users[email];
+    if (!u || sha256(str(b.key, 100)) !== u.keyHash) throw new E(401, 'Неверная почта или ключ');
+    db.cur = email; save();
+    return { user: userView(u) };
+  };
+  R['POST /api/logout'] = () => { db.cur = null; save(); return { ok: true }; };
+
+  R['POST /api/spin'] = () => {
+    const u = requireUser(), used = spinsUsed(u);
+    if (used >= maxSpins(u)) throw new E(429, 'Прокрутки на сегодня закончились. Приходите завтра!');
+    const index = pick(WHEEL);
+    u.lastSpinDay = dayKey(now()); u.spinsToday = used + 1; u.coins += WHEEL[index].coins; save();
+    const v = userView(u);
+    return { index, coins: WHEEL[index].coins, balance: u.coins, canSpin: v.canSpin, spinsLeft: v.spinsLeft, nextSpinAt: nextDay(now()) };
+  };
+  R['POST /api/promo/redeem'] = (b) => {
+    const u = requireUser(), p = db.promos[str(b.code, 40).toUpperCase()];
+    if (!p || !p.active) throw new E(404, 'Такого промокода нет');
+    if (p.expiresAt && p.expiresAt < now()) throw new E(400, 'Срок действия промокода истёк');
+    if (p.maxUses && p.usedBy.length >= p.maxUses) throw new E(400, 'Лимит активаций промокода исчерпан');
+    if (p.usedBy.includes(u.email)) throw new E(400, 'Вы уже активировали этот промокод');
+    p.usedBy.push(u.email); u.coins += p.coins; u.snow = (u.snow || 0) + (p.snowballs || 0); save();
+    return { coins: p.coins, snowballs: p.snowballs || 0, balance: u.coins, snow: u.snow };
+  };
+  R['POST /api/case/open'] = (b) => {
+    const u = requireUser(), c = db.cases[str(b.id, 20)];
+    if (!c) throw new E(404, 'Кейс не найден');
+    if (!c.open) throw new E(403, 'Этот кейс сейчас закрыт (технические работы)');
+    if (u.coins < c.price) throw new E(400, 'Не хватает монет');
+    const prize = c.prizes[pick(c.prizes)].coins;
+    u.coins = u.coins - c.price + prize;
+    const snow = rollSnow(); u.snow = (u.snow || 0) + snow; save();
+    return { prize, balance: u.coins, snow, snowBalance: u.snow };
+  };
+  R['GET /api/pass'] = () => passView(requireUser());
+  R['POST /api/exchange'] = (b) => {
+    const u = requireUser(), amount = num(b.amount, 0, 100000);
+    if (amount < 1) throw new E(400, 'Укажите, сколько снежков хотите получить');
+    const cost = amount * db.pass.rate;
+    if (u.coins < cost) throw new E(400, 'Не хватает монет: нужно ' + cost);
+    u.coins -= cost; u.snow = (u.snow || 0) + amount; save();
+    return passView(u);
+  };
+  R['POST /api/pass/buy'] = () => {
+    const u = requireUser(), p = db.pass;
+    if (!p.open) throw new E(403, 'Пасс сейчас закрыт');
+    if ((u.snow || 0) < p.price) throw new E(400, 'Не хватает снежков (С)');
+    u.snow -= p.price; u.passUntil = Math.max(now(), u.passUntil || 0) + p.days * DAY; save();
+    return passView(u);
+  };
+  R['POST /api/pass/claim'] = () => {
+    const u = requireUser();
+    if (!passActive(u)) throw new E(403, 'У вас нет активного пасса');
+    if (u.lastPassDay === dayKey(now())) throw new E(429, 'Сегодняшний подарок уже забран');
+    u.lastPassDay = dayKey(now()); u.coins += db.pass.dailyCoins; save();
+    return passView(u);
+  };
+
+  // ----- разработчик -----
+  R['POST /api/dev/login'] = async (b) => {
+    const t = now(); db.devFail = db.devFail.filter((x) => x > t - 900000);
+    if (db.devFail.length >= 8) throw new E(429, 'Слишком много попыток, подождите немного');
+    const cfg = devCfg();
+    if (typeof b.password !== 'string' || b.password.length > 200 || hashPw(b.password, cfg.salt) !== cfg.hash) {
+      db.devFail.push(t); save();
+      await new Promise((r) => setTimeout(r, 700));
+      throw new E(403, 'Неверный код разработчика');
+    }
+    db.devFail = []; db.devUntil = t + 2 * 3600e3; save();
+    return { ok: true };
+  };
+  R['POST /api/dev/logout'] = () => { db.devUntil = 0; save(); return { ok: true }; };
+  R['GET /api/dev/state'] = () => {
+    requireDev(); const t = now();
+    return {
+      users: Object.values(db.users).slice(-2000).reverse().map((u) => ({ email: u.email, coins: u.coins, snow: u.snow || 0, createdAt: u.createdAt, lastSpinDay: u.lastSpinDay,
+        pass: passActive(u) ? u.passUntil : null, banned: banActive(u) ? { reason: u.banned.reason, until: u.banned.until } : null })),
+      promos: Object.values(db.promos).reverse().map((p) => ({ code: p.code, coins: p.coins, snowballs: p.snowballs || 0, maxUses: p.maxUses, uses: p.usedBy.length, expiresAt: p.expiresAt,
+        active: p.active, createdAt: p.createdAt, note: p.note, expired: !!(p.expiresAt && p.expiresAt < t) })),
+      posts: db.posts.slice().reverse(), totalUsers: Object.keys(db.users).length, cases: Object.values(db.cases).map(caseView), maintenance: db.maintenance, pass: db.pass,
+    };
+  };
+  R['POST /api/dev/ban'] = (b) => {
+    requireDev(); const u = devUser(b);
+    const ms = num(b.days, 0, 36500) * DAY + num(b.hours, 0, 100000) * 36e5;
+    u.banned = { reason: str(b.reason, 200), until: ms ? now() + ms : null, at: now() }; save();
+    return { ok: true };
+  };
+  R['POST /api/dev/unban'] = (b) => { requireDev(); devUser(b).banned = null; save(); return { ok: true }; };
+  R['POST /api/dev/coins'] = (b) => {
+    requireDev(); const u = devUser(b), amount = num(b.amount, -1e9, 1e9);
+    if (!amount) throw new E(400, 'Укажите сумму (можно отрицательную)');
+    if (b.currency === 'snow') u.snow = Math.max(0, (u.snow || 0) + amount); else u.coins = Math.max(0, u.coins + amount);
+    save();
+    return { balance: u.coins, snow: u.snow };
+  };
+  const ALPHA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  R['POST /api/dev/promo/create'] = (b) => {
+    requireDev();
+    const coins = num(b.coins, 0, 1e9), snowballs = num(b.snowballs, 0, 1e6);
+    if (!coins && !snowballs) throw new E(400, 'Укажите монеты и/или снежки');
+    let code = str(b.code, 32).toUpperCase();
+    if (code) { if (!/^[A-Z0-9_-]{3,32}$/.test(code)) throw new E(400, 'Код: 3–32 символа, латиница, цифры, _ и -'); }
+    else { do { code = Array.from({ length: 10 }, () => ALPHA[rint(ALPHA.length)]).join(''); } while (db.promos[code]); }
+    if (db.promos[code]) throw new E(409, 'Такой промокод уже существует');
+    const ms = num(b.days, 0, 36500) * DAY + num(b.hours, 0, 100000) * 36e5 + num(b.minutes, 0, 100000) * 6e4;
+    db.promos[code] = { code, coins, snowballs, maxUses: num(b.maxUses, 0, 1e9), expiresAt: ms ? now() + ms : null, active: true, usedBy: [], createdAt: now(), note: str(b.note, 100) };
+    save();
+    return { code };
+  };
+  R['POST /api/dev/promo/toggle'] = (b) => { requireDev(); const p = db.promos[str(b.code, 40).toUpperCase()]; if (!p) throw new E(404, 'Промокод не найден'); p.active = !p.active; save(); return { active: p.active }; };
+  R['POST /api/dev/promo/delete'] = (b) => { requireDev(); const c = str(b.code, 40).toUpperCase(); if (!db.promos[c]) throw new E(404, 'Промокод не найден'); delete db.promos[c]; save(); return { ok: true }; };
+  R['POST /api/dev/post/create'] = (b) => {
+    requireDev(); const title = str(b.title, 100);
+    if (!title) throw new E(400, 'Нужен заголовок');
+    db.posts.push({ id: rnd(6), title, body: str(b.body, 2000), createdAt: now() }); save();
+    return { ok: true };
+  };
+  R['POST /api/dev/post/delete'] = (b) => { requireDev(); const id = str(b.id, 20); db.posts = db.posts.filter((p) => p.id !== id); save(); return { ok: true }; };
+  R['POST /api/dev/case/toggle'] = (b) => { requireDev(); const c = db.cases[str(b.id, 20)]; if (!c) throw new E(404, 'Кейс не найден'); c.open = !c.open; save(); return { open: c.open }; };
+  R['POST /api/dev/case/price'] = (b) => {
+    requireDev(); const c = db.cases[str(b.id, 20)]; if (!c) throw new E(404, 'Кейс не найден');
+    const price = num(b.price, 1, 1e7); if (!price) throw new E(400, 'Неверная цена');
+    c.price = price; save(); return { price };
+  };
+  R['POST /api/dev/maintenance'] = (b) => { requireDev(); db.maintenance = { on: !!b.on, message: str(b.message, 300) }; save(); return { ok: true }; };
+  R['POST /api/dev/pass'] = (b) => {
+    requireDev(); const p = db.pass;
+    if (b.price !== undefined) p.price = num(b.price, 1, 1e6, p.price);
+    if (b.days !== undefined) p.days = num(b.days, 1, 3650, p.days);
+    if (b.dailyCoins !== undefined) p.dailyCoins = num(b.dailyCoins, 0, 1e7, p.dailyCoins);
+    if (b.rate !== undefined) p.rate = num(b.rate, 1, 1e7, p.rate);
+    if (b.open !== undefined) p.open = !!b.open;
+    save();
+    return { pass: p };
+  };
+  R['POST /api/dev/password'] = (b) => {
+    requireDev();
+    const cfg = devCfg();
+    if (typeof b.oldPassword !== 'string' || hashPw(b.oldPassword, cfg.salt) !== cfg.hash) throw new E(403, 'Старый код неверный');
+    const np = typeof b.newPassword === 'string' ? b.newPassword : '';
+    if (np.length < 12 || np.length > 200) throw new E(400, 'Новый код: минимум 12 символов');
+    const salt = rhex(16); db.dev = { salt, hash: hashPw(np, salt) }; db.devUntil = 0; save();
+    return { ok: true };
+  };
+
+  // ---------- подмена fetch ----------
+  const realFetch = window.fetch ? window.fetch.bind(window) : null;
+  const resp = (code, obj) => new Response(JSON.stringify(obj), { status: code, headers: { 'Content-Type': 'application/json' } });
+  window.fetch = async function (url, opt) {
+    const path = String(url).split('?')[0];
+    if (!path.startsWith('/api/')) return realFetch ? realFetch(url, opt) : Promise.reject(new Error('no fetch'));
+    const method = (opt && opt.method) || 'GET';
+    let body = {}; try { body = opt && opt.body ? JSON.parse(opt.body) : {}; } catch (e) { /* пусто */ }
+    try {
+      const fn = R[method + ' ' + path];
+      if (!fn) throw new E(404, 'Не найдено');
+      if (db.maintenance.on && !path.startsWith('/api/dev/') && path !== '/api/me' && path !== '/api/logout' && !devActive()) throw new E(503, db.maintenance.message || MAINT);
+      return resp(200, await fn(body));
+    } catch (e) {
+      if (e instanceof E) return resp(e.code, { error: e.message });
+      console.error(e); return resp(500, { error: 'Ошибка' });
+    }
+  };
+})();
+
+</script>
+<script>
+'use strict';
+const SITE_NAME = 'GameHub';
+document.title = SITE_NAME;
+
+// ---------- помощники ----------
+function h(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else if (v !== false && v != null) e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const kid of kids.flat()) {
+    if (kid == null || kid === false) continue;
+    e.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+  }
+  return e;
+}
+async function api(path, body) {
+  const opt = body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
+  const r = await fetch(path, opt);
+  let j = {};
+  try { j = await r.json(); } catch {}
+  if (!r.ok) throw new Error(j.error || 'Ошибка ' + r.status);
+  return j;
+}
+function toast(msg, kind) {
+  const box = document.getElementById('toast');
+  const d = h('div', { class: kind || '' }, msg);
+  box.append(d);
+  setTimeout(() => d.remove(), 3500);
+}
+const fmt = (t) => new Date(t).toLocaleString('ru-RU', { dateStyle: 'short', timeStyle: 'short' });
+async function copyText(t) {
+  try { await navigator.clipboard.writeText(t); return true; } catch (e) { /* нет доступа к буферу */ }
+  try {
+    const ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.append(ta); ta.select(); const ok = document.execCommand('copy'); ta.remove(); return ok;
+  } catch (e) { return false; }
+}
+async function run(fn) { try { return await fn(); } catch (e) { toast(e.message, 'err'); } }
+function field(label, input) { return h('div', {}, h('label', {}, label), input); }
+
+// ---------- состояние ----------
+const S = { me: null, isDev: false, maint: null, tab: 'home', authTab: 'reg', newKey: null, prizes: [], dev: { sub: 'users', data: null, q: '' } };
+const root = document.getElementById('app');
+
+async function load() {
+  const r = await api('/api/me');
+  S.me = r.user; S.isDev = r.isDev; S.maint = r.maintenance;
+  render();
+}
+
+// новогодний снег
+(function snow() {
+  for (let i = 0; i < 28; i++) {
+    const s = h('div', { class: 'snow' }, i % 3 ? '❄' : '•');
+    s.style.left = Math.random() * 100 + 'vw';
+    s.style.fontSize = 10 + Math.random() * 14 + 'px';
+    s.style.animationDuration = 8 + Math.random() * 12 + 's';
+    s.style.animationDelay = -Math.random() * 15 + 's';
+    document.body.append(s);
+  }
+})();
+
+function maintView() {
+  const dev = h('input', { type: 'password', placeholder: 'Код разработчика', autocomplete: 'off' });
+  return h('div', { class: 'card center', style: 'max-width:480px;margin:50px auto' },
+    h('div', { style: 'font-size:56px' }, '🛠🎄'),
+    h('h2', {}, 'Технические работы'),
+    h('p', { class: 'muted' }, S.maint),
+    h('details', { style: 'margin-top:18px;text-align:left' }, h('summary', { class: 'muted' }, 'Вход для разработчика'),
+      h('div', { style: 'margin-top:10px' }, dev,
+        h('button', { class: 'btn', onclick: () => run(async () => { await api('/api/dev/login', { password: dev.value }); await load(); }) }, 'Войти'))));
+}
+
+function render() {
+  root.replaceChildren();
+  if (S.maint && !S.isDev) return root.append(maintView());
+  if (!S.me || S.newKey) return root.append(authView());
+  if (S.me.banned) return root.append(bannedView());
+  const tabs = [['home', 'Главная'], ['roulette', 'Рулетка'], ['cases', 'Кейсы'], ['pass', '🎟 Пасс'], ['promo', 'Промокод'], ['settings', 'Настройки']];
+  if (S.isDev) tabs.push(['dev', '🛠 Админка']);
+  root.append(
+    h('div', { class: 'header' },
+      h('div', { class: 'logo' }, '🎄 ' + SITE_NAME),
+      h('div', { class: 'balances' },
+        h('div', { class: 'coins js-coins' }, '🪙 ' + S.me.coins),
+        h('div', { class: 'coins js-snow', title: 'Снежки' }, scoin(), ' ' + S.me.snow))),
+    ...(S.maint ? [h('div', { class: 'banner' }, '🛠 Включены технические работы: сайт закрыт для всех, кроме вас.')] : []),
+    h('div', { class: 'nav' }, tabs.map(([k, n]) => h('button', { class: S.tab === k ? 'on' : '', onclick: () => { S.tab = k; render(); } }, n))),
+  );
+  const view = { home: homeView, roulette: rouletteView, cases: casesView, pass: passView, promo: promoView, settings: settingsView, dev: devView }[S.tab] || homeView;
+  root.append(view());
+}
+
+// жёлтая монета с буквой «С» — снежки
+function scoin() { return h('span', { class: 'scoin' }, 'С'); }
+
+// ---------- пасс ----------
+function passView() {
+  const box = h('div', { class: 'card' }, h('div', { class: 'muted' }, 'Загрузка…'));
+  const draw = (p) => {
+    const amt = h('input', { type: 'number', min: 1, value: 1, style: 'width:110px;margin:0' });
+    const cost = h('span', { class: 'muted' });
+    const upd = () => { cost.textContent = `= ${(Math.max(0, Math.floor(+amt.value || 0))) * p.rate} 🪙`; };
+    amt.addEventListener('input', upd); upd();
+    const exch = h('div', { style: 'margin-top:18px;padding-top:14px;border-top:1px solid var(--line)' },
+      h('b', {}, 'Обмен монет на снежки'),
+      h('p', { class: 'muted', style: 'margin:4px 0 10px' }, `Курс: ${p.rate} 🪙 = 1 `, scoin(), '. Обмен только в одну сторону.'),
+      h('div', { class: 'actions', style: 'align-items:center' }, amt, scoin(), cost,
+        h('button', { class: 'btn small', onclick: () => run(async () => {
+          await api('/api/exchange', { amount: amt.value }); toast('Обмен выполнен ❄', 'good'); await load();
+        }) }, 'Обменять')));
+    box.replaceChildren(
+      h('h2', {}, '🎟 ' + p.name),
+      h('p', { class: 'muted' }, `Действует ${p.days} дн. Покупается за снежки — они выпадают из кейсов. Повторная покупка продлевает срок.`),
+      h('b', {}, 'Что даёт пасс:'),
+      h('ul', { style: 'margin:6px 0 14px;padding-left:20px' },
+        h('li', {}, `🎁 Ежедневный подарок: +${p.dailyCoins} 🪙`),
+        h('li', {}, '🎡 Вторая бесплатная прокрутка рулетки каждый день')),
+      h('p', {}, p.active ? h('span', { class: 'tag ok' }, 'Активен до ' + fmt(p.until)) : h('span', { class: 'tag off' }, 'Не куплен')),
+      h('p', { class: 'muted' }, 'У вас: ', h('b', {}, String(p.snow)), ' ', scoin()),
+      h('div', { class: 'actions' },
+        h('button', { class: 'btn green', disabled: !p.open || p.snow < p.price, onclick: () => run(async () => {
+          await api('/api/pass/buy', {}); toast('Пасс активирован! 🎟', 'good'); await load();
+        }) }, p.open ? ['Купить за ', String(p.price), ' ', scoin()] : 'Пасс закрыт'),
+        p.active && h('button', { class: 'btn', disabled: !p.canClaim, onclick: () => run(async () => {
+          await api('/api/pass/claim', {}); toast(`+${p.dailyCoins} 🪙 подарок забран`, 'good'); await load();
+        }) }, p.canClaim ? `Забрать подарок: +${p.dailyCoins} 🪙` : 'Подарок уже забран — до завтра')),
+      exch);
+  };
+  run(async () => draw(await api('/api/pass')));
+  return box;
+}
+
+// ---------- кейсы ----------
+function casesView() {
+  const grid = h('div', { class: 'cases' }, h('div', { class: 'muted' }, 'Загрузка…'));
+  const snowBox = h('div', { style: 'margin-bottom:14px' });
+  const card = h('div', { class: 'card' }, h('h2', {}, '🎁 Новогодние кейсы'),
+    h('p', { class: 'muted' }, 'Открой кейс за монеты и получи монеты обратно. Повезёт — выиграешь больше, чем заплатил!'), snowBox, grid);
+  run(async () => {
+    const { cases, snowTable, snowChance } = await api('/api/cases');
+    snowBox.replaceChildren(
+      h('div', { class: 'muted', style: 'margin-bottom:6px' }, `Из любого кейса с шансом ${snowChance}% выпадают снежки. Чем больше награда — тем реже:`),
+      h('div', { class: 'chips' }, snowTable.map((t) => h('span', { class: 'chip' }, String(t.amount), ' ', scoin(), ' — ' + t.chance + '%'))));
+    grid.replaceChildren(...cases.map((c) => h('div', { class: 'case' + (c.open ? '' : ' closed') },
+      !c.open && h('div', { class: 'ribbon' }, 'ТЕХ. РАБОТЫ'),
+      h('div', { class: 'em' }, c.emoji), h('h3', {}, c.name),
+      h('div', { class: 'muted', style: 'margin-bottom:10px' }, `Призы: ${Math.min(...c.prizes)}–${Math.max(...c.prizes)} 🪙`),
+      h('button', { class: 'btn green', disabled: !c.open || S.me.coins < c.price, onclick: () => openCase(c) },
+        c.open ? `Открыть за ${c.price} 🪙` : 'Закрыт'))));
+  });
+  return card;
+}
+
+function rarity(coins, price) {
+  const k = coins / price;
+  return k >= 5 ? 5 : k >= 2 ? 4 : k >= 1.1 ? 3 : k >= 0.5 ? 2 : 1;
+}
+function tileEl(coins, price) {
+  return h('div', { class: 'tile r' + rarity(coins, price) }, '🪙 ' + coins);
+}
+function openCase(c) {
+  run(async () => {
+    const r = await api('/api/case/open', { id: c.id });
+    const WIN = 34, TILE = 118;
+    const uniq = [...new Set(c.prizes)];
+    const strip = h('div', { class: 'strip' });
+    for (let i = 0; i < 42; i++) strip.append(tileEl(i === WIN ? r.prize : uniq[Math.floor(Math.random() * uniq.length)], c.price));
+    const wrap = h('div', { class: 'strip-wrap' }, strip);
+    const result = h('div', { class: 'result' });
+    const closeBtn = h('button', { class: 'btn', disabled: true, onclick: () => { modal.remove(); render(); } }, 'Закрыть');
+    const modal = h('div', { class: 'modal' }, h('div', { class: 'box' }, h('h2', {}, `${c.emoji} ${c.name}`), wrap, result, closeBtn));
+    document.body.append(modal);
+    S.me.coins = r.balance; S.me.snow = r.snowBalance;
+    const target = WIN * TILE + 55 - wrap.clientWidth / 2 + (Math.random() * 40 - 20);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      strip.style.transition = 'transform 5s cubic-bezier(.12,.7,.1,1)';
+      strip.style.transform = `translateX(${-target}px)`;
+    }));
+    setTimeout(() => {
+      result.replaceChildren(r.prize >= c.price ? `🎉 +${r.prize} 🪙` : `+${r.prize} 🪙`,
+        ...(r.snow > 0 ? [h('div', { style: 'margin-top:6px' }, `❄ Снежки: +${r.snow} `, scoin())] : []));
+      closeBtn.disabled = false;
+      document.querySelector('.js-coins').textContent = '🪙 ' + r.balance;
+      document.querySelector('.js-snow').replaceChildren(scoin(), ' ' + r.snowBalance);
+    }, 5200);
+  });
+}
+
+// ---------- вход / регистрация ----------
+function authView() {
+  const wrap = h('div', { class: 'card', style: 'max-width:440px;margin:40px auto' });
+  wrap.append(h('div', { class: 'logo center', style: 'font-size:28px;margin-bottom:14px' }, SITE_NAME));
+
+  if (S.newKey) {
+    wrap.append(
+      h('h2', {}, 'Аккаунт создан 🎉'),
+      h('p', { class: 'muted' }, 'Это ваш личный ключ. Он нужен, чтобы войти с другого устройства. Сохраните его — показывается один раз!'),
+      h('div', { class: 'keybox' }, S.newKey),
+      h('button', { class: 'btn ghost', style: 'width:100%;margin-bottom:10px', onclick: async () => { toast((await copyText(S.newKey)) ? 'Скопировано' : 'Не удалось скопировать — выделите ключ и скопируйте вручную', 'good'); } }, 'Скопировать ключ'),
+      h('button', { class: 'btn', style: 'width:100%', onclick: () => { S.newKey = null; render(); } }, 'Я сохранил, продолжить'),
+    );
+    return wrap;
+  }
+
+  wrap.append(h('div', { class: 'tabs' },
+    h('button', { class: S.authTab === 'reg' ? 'on' : '', onclick: () => { S.authTab = 'reg'; render(); } }, 'Регистрация'),
+    h('button', { class: S.authTab === 'login' ? 'on' : '', onclick: () => { S.authTab = 'login'; render(); } }, 'Вход')));
+
+  const email = h('input', { type: 'email', placeholder: 'you@mail.com', autocomplete: 'email' });
+  if (S.authTab === 'reg') {
+    wrap.append(
+      field('Ваша почта', email),
+      h('button', { class: 'btn', style: 'width:100%', onclick: () => run(async () => {
+        const r = await api('/api/register', { email: email.value });
+        S.me = r.user; S.newKey = r.key; render();
+      }) }, 'Зарегистрироваться'));
+  } else {
+    const key = h('input', { type: 'password', placeholder: 'Личный ключ', autocomplete: 'current-password' });
+    wrap.append(
+      field('Почта', email), field('Личный ключ (выдаётся при регистрации)', key),
+      h('button', { class: 'btn', style: 'width:100%', onclick: () => run(async () => {
+        const r = await api('/api/login', { email: email.value, key: key.value });
+        S.me = r.user; await load();
+      }) }, 'Войти'));
+  }
+  return wrap;
+}
+
+function bannedView() {
+  return h('div', { class: 'card banned' },
+    h('h2', {}, '⛔ ' + S.me.banned),
+    h('p', { class: 'muted' }, 'Если это ошибка — напишите администратору.'),
+    h('button', { class: 'btn ghost', onclick: () => run(async () => { await api('/api/logout', {}); S.me = null; render(); }) }, 'Выйти'));
+}
+
+// ---------- главная ----------
+function homeView() {
+  const box = h('div', { class: 'card' }, h('h2', {}, 'Новости'), h('div', { class: 'muted' }, 'Загрузка…'));
+  run(async () => {
+    const { posts } = await api('/api/posts');
+    box.replaceChildren(h('h2', {}, 'Новости'),
+      ...(posts.length ? posts.map((p) => h('div', { class: 'post' }, h('b', {}, p.title), h('span', { class: 'd' }, fmt(p.createdAt)), p.body && h('p', {}, p.body)))
+        : [h('div', { class: 'muted' }, 'Пока новостей нет.')]));
+  });
+  return box;
+}
+
+// ---------- рулетка ----------
+let wheelRot = 0;
+function drawWheel(canvas, prizes) {
+  const c = canvas.getContext('2d'), n = prizes.length, R = canvas.width / 2, a = (Math.PI * 2) / n;
+  c.clearRect(0, 0, canvas.width, canvas.height);
+  for (let i = 0; i < n; i++) {
+    const s = -Math.PI / 2 + i * a;
+    c.beginPath(); c.moveTo(R, R); c.arc(R, R, R - 4, s, s + a); c.closePath();
+    c.fillStyle = i % 2 ? '#c81e3a' : '#15803d'; c.fill();
+    c.strokeStyle = '#fbbf24'; c.lineWidth = 3; c.stroke();
+    c.save(); c.translate(R, R); c.rotate(s + a / 2); c.textAlign = 'right'; c.fillStyle = '#fff';
+    c.font = 'bold 26px system-ui'; c.fillText(String(prizes[i]), R - 26, 9); c.restore();
+  }
+  c.beginPath(); c.arc(R, R, 30, 0, 7); c.fillStyle = '#0e0f1a'; c.fill();
+  c.strokeStyle = '#fbbf24'; c.lineWidth = 4; c.stroke();
+}
+function rouletteView() {
+  const card = h('div', { class: 'card center' }, h('h2', {}, 'Бесплатная рулетка'));
+  const canvas = h('canvas', { width: 600, height: 600 });
+  const wrap = h('div', { class: 'wheelwrap' }, h('div', { class: 'pointer' }), canvas);
+  const info = h('p', { class: 'muted' });
+  const btn = h('button', { class: 'btn', style: 'min-width:200px;font-size:18px' }, 'Крутить!');
+  canvas.style.transform = `rotate(${wheelRot}deg)`;
+
+  const refreshInfo = () => {
+    if (S.me.canSpin) { info.textContent = `Бесплатных прокруток сегодня: ${S.me.spinsLeft}`; btn.disabled = false; }
+    else { info.textContent = 'Следующая прокрутка: ' + fmt(S.me.nextSpinAt); btn.disabled = true; }
+  };
+  refreshInfo();
+
+  const ready = (async () => {
+    if (!S.prizes.length) S.prizes = (await api('/api/prizes')).prizes;
+    drawWheel(canvas, S.prizes);
+  })();
+
+  btn.onclick = () => run(async () => {
+    await ready;
+    btn.disabled = true;
+    const r = await api('/api/spin', {});
+    const seg = 360 / S.prizes.length;
+    wheelRot += 360 * 6 + ((360 - wheelRot % 360) % 360) + (360 - (r.index + 0.5) * seg);
+    canvas.style.transform = `rotate(${wheelRot}deg)`;
+    setTimeout(() => {
+      S.me.coins = r.balance; S.me.canSpin = r.canSpin; S.me.spinsLeft = r.spinsLeft; S.me.nextSpinAt = r.nextSpinAt;
+      toast(`Вы выиграли ${r.coins} монет! 🪙`, 'good');
+      render();
+    }, 5200);
+  });
+  card.append(wrap, info, btn);
+  return card;
+}
+
+// ---------- промокод ----------
+function promoView() {
+  const code = h('input', { placeholder: 'Введите промокод', maxlength: 40, autocapitalize: 'characters' });
+  return h('div', { class: 'card', style: 'max-width:440px' },
+    h('h2', {}, 'Промокод'), code,
+    h('button', { class: 'btn', onclick: () => run(async () => {
+      const r = await api('/api/promo/redeem', { code: code.value });
+      S.me.coins = r.balance; S.me.snow = r.snow;
+      toast('Промокод активирован:' + (r.coins ? ` +${r.coins} 🪙` : '') + (r.snowballs ? ` +${r.snowballs} С` : ''), 'good'); render();
+    }) }, 'Активировать'));
+}
+
+// ---------- настройки ----------
+function settingsView() {
+  const dev = h('input', { type: 'password', placeholder: 'Код разработчика', autocomplete: 'off' });
+  const box = h('div', {},
+    h('div', { class: 'card' }, h('h2', {}, 'Аккаунт'), h('p', { class: 'muted' }, 'Почта: ' + S.me.email),
+      h('button', { class: 'btn ghost', onclick: () => run(async () => { await api('/api/logout', {}); S.me = null; S.isDev = false; render(); }) }, 'Выйти')),
+    h('div', { class: 'card' }, h('h2', {}, 'Режим разработчика'),
+      S.isDev
+        ? [h('p', { class: 'muted' }, 'Режим включён. Откройте вкладку «Админка».'),
+           h('button', { class: 'btn ghost', onclick: () => run(async () => { await api('/api/dev/logout', {}); S.isDev = false; S.tab = 'settings'; render(); }) }, 'Выключить режим')]
+        : [dev, h('button', { class: 'btn', onclick: () => run(async () => {
+            await api('/api/dev/login', { password: dev.value });
+            S.isDev = true; S.tab = 'dev'; toast('Режим разработчика включён', 'good'); render();
+          }) }, 'Войти')]));
+  return box;
+}
+
+// ---------- админка ----------
+function devView() {
+  if (!S.isDev) return h('div', { class: 'card' }, 'Нет доступа');
+  const wrap = h('div');
+  const subs = [['users', 'Пользователи'], ['promos', 'Промокоды'], ['cases', 'Кейсы, пасс, тех. работы'], ['posts', 'Новости'], ['pass', 'Код доступа']];
+  wrap.append(h('div', { class: 'tabs' }, subs.map(([k, n]) => h('button', { class: S.dev.sub === k ? 'on' : '', onclick: () => { S.dev.sub = k; render(); } }, n))));
+  const body = h('div', {}, h('div', { class: 'muted' }, 'Загрузка…'));
+  wrap.append(body);
+  run(async () => {
+    S.dev.data = await api('/api/dev/state');
+    body.replaceChildren(({ users: devUsers, promos: devPromos, cases: (d) => h('div', {}, devCases(d), devPassSettings(d)), posts: devPosts, pass: devPass })[S.dev.sub](S.dev.data));
+  });
+  return wrap;
+}
+const reload = () => render();
+const act = (path, body, okMsg) => run(async () => { await api(path, body); if (okMsg) toast(okMsg, 'good'); reload(); });
+
+function devUsers(d) {
+  const email = h('input', { placeholder: 'Почта пользователя' });
+  const reason = h('input', { placeholder: 'Причина бана' });
+  const days = h('input', { type: 'number', min: 0, placeholder: 'Дней', value: 0 });
+  const hours = h('input', { type: 'number', min: 0, placeholder: 'Часов', value: 0 });
+  const amount = h('input', { type: 'number', placeholder: 'Сколько (+/−)' });
+  const cur = h('select', {}, h('option', { value: 'coins' }, 'Монеты 🪙'), h('option', { value: 'snow' }, 'Снежки (С)'));
+  const q = h('input', { placeholder: 'Поиск по почте', value: S.dev.q });
+  const tbody = h('tbody');
+  const fill = () => {
+    tbody.replaceChildren(...d.users.filter((u) => u.email.includes(q.value.toLowerCase())).slice(0, 200).map((u) => h('tr', {},
+      h('td', {}, u.email, u.pass && h('span', { class: 'tag ok', style: 'margin-left:6px' }, 'пасс')), h('td', {}, String(u.coins)), h('td', {}, String(u.snow)),
+      h('td', {}, u.banned ? h('span', { class: 'tag bad' }, 'бан' + (u.banned.until ? ' до ' + fmt(u.banned.until) : '')) : h('span', { class: 'tag ok' }, 'ок')),
+      h('td', { class: 'actions' },
+        h('button', { class: 'btn small ghost', onclick: () => { email.value = u.email; window.scrollTo(0, 0); } }, 'Выбрать'),
+        u.banned && h('button', { class: 'btn small ok', onclick: () => act('/api/dev/unban', { email: u.email }, 'Разбанен') }, 'Разбан')))));
+  };
+  q.addEventListener('input', () => { S.dev.q = q.value; fill(); });
+  fill();
+  return h('div', {},
+    h('div', { class: 'card' }, h('h2', {}, 'Бан / монеты'), email,
+      h('div', { class: 'row' }, field('Причина', reason), field('Дней (0 = навсегда)', days), field('Часов', hours)),
+      h('div', { class: 'actions' },
+        h('button', { class: 'btn danger', onclick: () => act('/api/dev/ban', { email: email.value, reason: reason.value, days: days.value, hours: hours.value }, 'Забанен') }, 'Забанить'),
+        h('button', { class: 'btn ok', onclick: () => act('/api/dev/unban', { email: email.value }, 'Разбанен') }, 'Разбанить')),
+      h('hr', { style: 'border:0;border-top:1px solid var(--line);margin:16px 0' }),
+      field('Выдать / забрать (минус — забрать)', cur), amount,
+      h('button', { class: 'btn', onclick: () => act('/api/dev/coins', { email: email.value, amount: amount.value, currency: cur.value }, 'Баланс изменён') }, 'Применить')),
+    h('div', { class: 'card' }, h('h2', {}, 'Пользователи (' + d.totalUsers + ')'), q,
+      h('div', { class: 'scroll' }, h('table', { class: 'table' }, h('thead', {}, h('tr', {}, ['Почта', 'Монеты', 'С', 'Статус', ''].map((t) => h('th', {}, t)))), tbody))));
+}
+
+function devPromos(d) {
+  const code = h('input', { placeholder: 'Авто-генерация, если пусто', maxlength: 32 });
+  const coins = h('input', { type: 'number', min: 0, value: 0 });
+  const snowb = h('input', { type: 'number', min: 0, value: 0 });
+  const days = h('input', { type: 'number', min: 0, value: 0 });
+  const hours = h('input', { type: 'number', min: 0, value: 0 });
+  const minutes = h('input', { type: 'number', min: 0, value: 0 });
+  const max = h('input', { type: 'number', min: 0, value: 0 });
+  const note = h('input', { placeholder: 'Заметка (видна только вам)', maxlength: 100 });
+  const status = (p) => !p.active ? h('span', { class: 'tag off' }, 'выкл') : p.expired ? h('span', { class: 'tag bad' }, 'истёк')
+    : (p.maxUses && p.uses >= p.maxUses) ? h('span', { class: 'tag bad' }, 'лимит') : h('span', { class: 'tag ok' }, 'активен');
+  return h('div', {},
+    h('div', { class: 'card' }, h('h2', {}, 'Новый промокод'),
+      field('Код', code), field('Монет за активацию', coins), field('Снежков (С) за активацию', snowb),
+      h('div', { class: 'row' }, field('Действует: дней', days), field('часов', hours), field('минут', minutes)),
+      h('p', { class: 'muted', style: 'margin-top:-4px' }, 'Все три поля 0 = без срока действия.'),
+      field('Максимум активаций (0 = без лимита)', max), field('Заметка', note),
+      h('button', { class: 'btn', onclick: () => run(async () => {
+        const r = await api('/api/dev/promo/create', { code: code.value, coins: coins.value, snowballs: snowb.value, days: days.value, hours: hours.value, minutes: minutes.value, maxUses: max.value, note: note.value });
+        const copied = await copyText(r.code); toast('Создан: ' + r.code + (copied ? ' (скопирован)' : ''), 'good'); reload();
+      }) }, 'Создать')),
+    h('div', { class: 'card' }, h('h2', {}, 'Промокоды (' + d.promos.length + ')'),
+      h('div', { class: 'scroll' }, h('table', { class: 'table' },
+        h('thead', {}, h('tr', {}, ['Код', 'Награда', 'Использовано', 'До', 'Статус', ''].map((t) => h('th', {}, t)))),
+        h('tbody', {}, d.promos.map((p) => h('tr', {},
+          h('td', {}, h('b', {}, p.code), p.note && h('div', { class: 'muted' }, p.note)),
+          h('td', {}, p.coins ? p.coins + ' 🪙 ' : '', p.snowballs ? [String(p.snowballs), ' ', scoin()] : ''), h('td', {}, p.uses + ' / ' + (p.maxUses || '∞')),
+          h('td', {}, p.expiresAt ? fmt(p.expiresAt) : '—'), h('td', {}, status(p)),
+          h('td', { class: 'actions' },
+            h('button', { class: 'btn small ghost', onclick: () => act('/api/dev/promo/toggle', { code: p.code }) }, p.active ? 'Выкл' : 'Вкл'),
+            h('button', { class: 'btn small danger', onclick: () => { if (confirm('Удалить ' + p.code + '?')) act('/api/dev/promo/delete', { code: p.code }); } }, 'Удалить')))))))));
+}
+
+function devCases(d) {
+  const m = d.maintenance;
+  const msg = h('input', { placeholder: 'Сообщение для игроков (необязательно)', maxlength: 300, value: m.message || '' });
+  return h('div', {},
+    h('div', { class: 'card' }, h('h2', {}, '🛠 Технические работы'),
+      h('p', { class: 'muted' }, 'Когда включено, сайт закрыт для всех игроков. Видят и могут работать только вы (в режиме разработчика).'),
+      h('p', {}, 'Сейчас: ', m.on ? h('span', { class: 'tag bad' }, 'ВКЛЮЧЕНЫ') : h('span', { class: 'tag ok' }, 'выключены')),
+      msg,
+      h('div', { class: 'actions' },
+        m.on
+          ? [h('button', { class: 'btn ok', onclick: () => act('/api/dev/maintenance', { on: false }, 'Сайт открыт для всех') }, 'Выключить тех. работы'),
+             h('button', { class: 'btn ghost', onclick: () => act('/api/dev/maintenance', { on: true, message: msg.value }, 'Сообщение обновлено') }, 'Обновить сообщение')]
+          : h('button', { class: 'btn danger', onclick: () => { if (confirm('Закрыть сайт для всех игроков?')) act('/api/dev/maintenance', { on: true, message: msg.value }, 'Сайт закрыт'); } }, 'Включить тех. работы'))),
+    h('div', { class: 'card' }, h('h2', {}, '🎁 Кейсы'),
+      h('div', { class: 'scroll' }, h('table', { class: 'table' },
+        h('thead', {}, h('tr', {}, ['Кейс', 'Цена', 'Статус', ''].map((t) => h('th', {}, t)))),
+        h('tbody', {}, d.cases.map((c) => {
+          const price = h('input', { type: 'number', min: 1, value: c.price, style: 'width:90px;margin:0' });
+          return h('tr', {},
+            h('td', {}, c.emoji + ' ' + c.name, h('div', { class: 'muted' }, 'призы: ' + c.prizes.join(', '))),
+            h('td', {}, h('div', { class: 'actions' }, price, h('button', { class: 'btn small ghost', onclick: () => act('/api/dev/case/price', { id: c.id, price: price.value }, 'Цена изменена') }, 'OK'))),
+            h('td', {}, c.open ? h('span', { class: 'tag ok' }, 'открыт') : h('span', { class: 'tag bad' }, 'закрыт')),
+            h('td', {}, h('button', { class: 'btn small ' + (c.open ? 'danger' : 'ok'), onclick: () => act('/api/dev/case/toggle', { id: c.id }, c.open ? 'Кейс закрыт' : 'Кейс открыт') }, c.open ? 'Закрыть' : 'Открыть')));
+        }))))));
+}
+
+function devPassSettings(d) {
+  const p = d.pass;
+  const price = h('input', { type: 'number', min: 1, value: p.price });
+  const days = h('input', { type: 'number', min: 1, value: p.days });
+  const daily = h('input', { type: 'number', min: 0, value: p.dailyCoins });
+  const rate = h('input', { type: 'number', min: 1, value: p.rate });
+  return h('div', { class: 'card' }, h('h2', {}, '🎟 Пасс и курс снежков'),
+    h('p', {}, 'Сейчас: ', p.open ? h('span', { class: 'tag ok' }, 'продаётся') : h('span', { class: 'tag bad' }, 'закрыт')),
+    h('div', { class: 'row' }, field('Цена (снежков С)', price), field('Срок (дней)', days), field('Подарок в день (монет)', daily), field('Курс: монет за 1 С', rate)),
+    h('div', { class: 'actions' },
+      h('button', { class: 'btn', onclick: () => act('/api/dev/pass', { price: price.value, days: days.value, dailyCoins: daily.value, rate: rate.value }, 'Сохранено') }, 'Сохранить'),
+      h('button', { class: 'btn ' + (p.open ? 'danger' : 'ok'), onclick: () => act('/api/dev/pass', { open: !p.open }, p.open ? 'Продажа закрыта' : 'Продажа открыта') }, p.open ? 'Закрыть продажу' : 'Открыть продажу')));
+}
+
+function devPosts(d) {
+  const title = h('input', { placeholder: 'Заголовок', maxlength: 100 });
+  const body = h('textarea', { placeholder: 'Текст новости', maxlength: 2000 });
+  return h('div', {},
+    h('div', { class: 'card' }, h('h2', {}, 'Опубликовать новость'), title, body,
+      h('button', { class: 'btn', onclick: () => act('/api/dev/post/create', { title: title.value, body: body.value }, 'Опубликовано') }, 'Опубликовать')),
+    h('div', { class: 'card' }, h('h2', {}, 'Опубликовано'),
+      d.posts.length ? d.posts.map((p) => h('div', { class: 'post' }, h('b', {}, p.title), h('span', { class: 'd' }, fmt(p.createdAt)),
+        h('div', { style: 'margin-top:6px' }, h('button', { class: 'btn small danger', onclick: () => act('/api/dev/post/delete', { id: p.id }, 'Удалено') }, 'Удалить'))))
+        : h('div', { class: 'muted' }, 'Пока пусто')));
+}
+
+function devPass() {
+  const o = h('input', { type: 'password', autocomplete: 'off' });
+  const n = h('input', { type: 'password', autocomplete: 'new-password' });
+  return h('div', { class: 'card', style: 'max-width:440px' }, h('h2', {}, 'Сменить код разработчика'),
+    field('Текущий код', o), field('Новый код (минимум 12 символов)', n),
+    h('button', { class: 'btn', onclick: () => run(async () => {
+      await api('/api/dev/password', { oldPassword: o.value, newPassword: n.value });
+      S.isDev = false; S.tab = 'settings'; toast('Код изменён. Войдите заново.', 'good'); render();
+    }) }, 'Сменить'));
+}
+
+load();
+
+</script>
+</body>
+</html>
